@@ -24,9 +24,13 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs",
+    "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "data:test": "vitest run tests/ports.test.ts tests/registry.test.ts",
+    "application:test": "vitest run tests/spawn.test.ts",
+    "presentation:test": "vitest run tests/ui.test.ts"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
