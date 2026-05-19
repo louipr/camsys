@@ -102,8 +102,11 @@ keys, so schema additions don't break older consumers.
 
 ## Library face
 
-Consumers that want to query the registry from inside their own code
-(e.g., cam's Services panel) can import directly instead of shelling out:
+Two opt-in subpaths beyond the CLI:
+
+### `camsys` — data face (vanilla TS, no UI deps)
+
+Read the registry programmatically:
 
 ```ts
 import { listEntries, readEntry, sweepStale } from 'camsys'
@@ -111,6 +114,45 @@ import { listEntries, readEntry, sweepStale } from 'camsys'
 const running = listEntries()
 // → [{ name: 'docskit', pid: 84321, vitePort: 51234, ... }, ...]
 ```
+
+Zero runtime deps. Safe for CLI / Node / SSR / any non-browser host.
+
+### `camsys/ui` — React component (opt-in)
+
+A live `ServicesPanel` that polls the registry and renders the table
+with a Kill button per row. React-and-react-dom are **optional peer
+dependencies** — only hosts that import this subpath need them.
+
+```tsx
+import { ServicesPanel, type ServicesIO } from 'camsys/ui'
+
+const io: ServicesIO = {
+  list: () => window.electronAPI.invoke('camsys:list'),    // host IPC
+  kill: (name) => window.electronAPI.invoke('camsys:kill', name),
+}
+
+<ServicesPanel
+  io={io}
+  refreshIntervalMs={2000}
+  onOpenService={(name) => routeToPackageDetail(name)}
+/>
+```
+
+The component is host-IO-agnostic — it knows nothing about Electron,
+filesystem, or kill semantics. The host implements `list` / `kill`,
+typically by:
+- `list` → reading `~/.cam/run/*.json` (use `listEntries` from `camsys`)
+- `kill` → shelling `camsys kill <name>` or calling `process.kill(-pgid, 'SIGTERM')`
+
+Same inverted-IO pattern docskit's `createEditor` uses. Same component
+renders unchanged in Electron-renderer / Tauri / web-over-localhost-HTTP
+hosts.
+
+**Class names for styling** (no inline styles, no CSS-in-JS):
+`.camsys-panel`, `.camsys-empty`, `.camsys-error`, `.camsys-table`,
+`.camsys-row`, `.camsys-row-link`, `.camsys-mono`, `.camsys-col-name`,
+`.camsys-col-pid`, `.camsys-col-port`, `.camsys-col-age`,
+`.camsys-col-action`, `.camsys-kill`.
 
 ## What camsys doesn't try to do
 
