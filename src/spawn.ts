@@ -42,6 +42,18 @@ export interface RunOptions {
   cwd?: string
   /** Extra env vars to inject in addition to CAM_*_PORT. */
   env?: Record<string, string>
+  /**
+   * Fire-and-forget mode for library callers (e.g., cam's main
+   * process spawning docskit from "Open in docskit"). Differences
+   * from the default CLI behavior:
+   *  - stdio: 'ignore' (no terminal to inherit)
+   *  - child.unref() (parent can exit while child keeps running)
+   *  - no signal forwarding (parent's SIGTERM doesn't kill the child)
+   * The returned promise still resolves when the child exits, and
+   * cleanup (deleteEntry) still runs — callers that don't care just
+   * `void run({detach: true, ...})` and forget.
+   */
+  detach?: boolean
 }
 
 const FORWARDED_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
@@ -55,11 +67,12 @@ export async function run(opts: RunOptions): Promise<number> {
   const [vitePort, cdpPort] = await pickFreePorts(2)
 
   // Spawn in a new process group so we can kill the whole tree by sending
-  // a signal to -pgid. `detached: true` does this on POSIX; we keep the
-  // parent reference (no .unref()) so the wrapper waits for child exit.
+  // a signal to -pgid. `detached: true` always; what changes between CLI
+  // and library-callers is stdio + whether we unref + whether we forward
+  // signals — see RunOptions.detach.
   const child = spawn(opts.argv[0]!, opts.argv.slice(1), {
     cwd,
-    stdio: 'inherit',
+    stdio: opts.detach ? 'ignore' : 'inherit',
     detached: true,
     env: {
       ...process.env,
@@ -79,6 +92,12 @@ export async function run(opts: RunOptions): Promise<number> {
   // process group whose pgid equals child.pid.
   const pgid = child.pid
 
+  // unref() lets the parent's event loop exit while the child keeps
+  // running. CLI callers (`camsys run` in a terminal) DON'T want this —
+  // they want the wrapper to wait for the child. Library callers in
+  // fire-and-forget mode DO want it.
+  if (opts.detach) child.unref()
+
   const entry: Entry = {
     name: opts.name,
     pid: child.pid,
@@ -91,16 +110,19 @@ export async function run(opts: RunOptions): Promise<number> {
   }
   writeEntry(entry)
 
-  // Forward signals to the child's process group. We use kill(-pgid, sig)
-  // — the negative pid form means "send to the whole group."
-  let forwarding = false
-  const forward = (signal: NodeJS.Signals) => {
-    if (forwarding) return
-    forwarding = true
-    try { process.kill(-pgid, signal) } catch { /* group already gone */ }
-  }
-  for (const sig of FORWARDED_SIGNALS) {
-    process.on(sig, () => forward(sig))
+  // Forward signals to the child's process group ONLY for the CLI path.
+  // In detach mode (cam's main spawning docskit etc.) we don't want
+  // cam's SIGTERM tearing down the spawned docskit window.
+  if (!opts.detach) {
+    let forwarding = false
+    const forward = (signal: NodeJS.Signals) => {
+      if (forwarding) return
+      forwarding = true
+      try { process.kill(-pgid, signal) } catch { /* group already gone */ }
+    }
+    for (const sig of FORWARDED_SIGNALS) {
+      process.on(sig, () => forward(sig))
+    }
   }
 
   // Wait for the child to exit; resolve with the exit code we should
