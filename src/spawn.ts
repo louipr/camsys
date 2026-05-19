@@ -66,6 +66,21 @@ export async function run(opts: RunOptions): Promise<number> {
   const cwd = opts.cwd ?? process.cwd()
   const [vitePort, cdpPort] = await pickFreePorts(2)
 
+  // Env-merge rule depends on mode:
+  //   - CLI mode (!detach): merge our caller's process.env (PATH, HOME,
+  //     terminal vars, etc.) THEN apply opts.env overrides. Standard
+  //     "inherit my shell's env" behavior the CLI user expects.
+  //   - detach mode (library call): opts.env is AUTHORITATIVE. We
+  //     don't pre-spread process.env because the caller already
+  //     chose which vars to inherit. Spreading would re-introduce
+  //     keys the caller deliberately omitted (e.g., cam strips
+  //     ELECTRON_RENDERER_URL before spawning docskit — pre-spreading
+  //     would put it right back and docskit's main would load cam's
+  //     dev-server URL instead of its own renderer).
+  const baseEnv = opts.detach
+    ? (opts.env ?? {})
+    : { ...process.env, ...(opts.env ?? {}) }
+
   // Spawn in a new process group so we can kill the whole tree by sending
   // a signal to -pgid. `detached: true` always; what changes between CLI
   // and library-callers is stdio + whether we unref + whether we forward
@@ -75,8 +90,7 @@ export async function run(opts: RunOptions): Promise<number> {
     stdio: opts.detach ? 'ignore' : 'inherit',
     detached: true,
     env: {
-      ...process.env,
-      ...opts.env,
+      ...baseEnv,
       CAM_VITE_PORT: String(vitePort),
       CAM_CDP_PORT: String(cdpPort),
       // Hint for the child / observers that they were spawned under camsys.
