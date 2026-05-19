@@ -9,8 +9,10 @@
 export {
   type Entry,
   REGISTRY_DIR,
+  registryDir,
   listEntries,
   readEntry,
+  deleteEntry,
   isPidAlive,
   sweepStale,
 } from './registry.js'
