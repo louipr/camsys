@@ -1,0 +1,167 @@
+/**
+ * camsys app — dark-theme styles for the standalone window.
+ *
+ * Includes both:
+ *   1. App shell chrome (header, layout, fonts)
+ *   2. Local copy of the camsys-* class names ServicesPanel emits,
+ *      since the standalone app has no host to provide them
+ *
+ * Same class names cam's embedded panel uses, so the visual is
+ * consistent across both faces. If you're styling for a custom
+ * host, see ui/ServicesPanel.tsx for the class catalog.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid #1a2438;
+  background: linear-gradient(180deg, #131b2f 0%, #0f172a 100%);
+}
+
+.app-header h1 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.app-header code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  padding: 1px 5px;
+  background: #1a2438;
+  border-radius: 3px;
+  color: #cbd5e1;
+}
+
+main {
+  flex: 1;
+  padding: 16px 24px;
+  overflow-y: auto;
+}
+
+/* --- camsys/ui ServicesPanel class names --- */
+
+.camsys-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.camsys-panel-loading,
+.camsys-empty {
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.camsys-error {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 4px;
+}
+
+.camsys-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.camsys-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1a2438;
+}
+
+.camsys-table th.camsys-col-pid,
+.camsys-table th.camsys-col-port,
+.camsys-table th.camsys-col-age {
+  text-align: right;
+}
+
+.camsys-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+.camsys-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.camsys-mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: right;
+  font-size: 12px;
+}
+
+.camsys-col-action {
+  width: 70px;
+  text-align: right;
+}
+
+.camsys-row-link {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.camsys-row-link:hover {
+  text-decoration: underline;
+}
+
+.camsys-kill {
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  color: #f87171;
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 80ms ease-out;
+}
+.camsys-kill:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+.camsys-kill:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}

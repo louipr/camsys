@@ -1,7 +1,9 @@
 # camsys
 
-System-level tooling for the CAM ecosystem. One small CLI that solves
-three coupled problems:
+System-level tooling for the CAM ecosystem. Four faces from one repo —
+a CLI, a vanilla TS data face, a React component, and a standalone
+Electron app — all backed by the same on-disk registry. Solves three
+coupled problems:
 
 1. **Port collisions** — every wrapped service gets kernel-assigned
    free ports (no hardcoded `5100`, `5173`, `9222`); the kernel
@@ -99,6 +101,36 @@ One JSON file per running service at `~/.cam/run/<name>.json`:
 Atomic-write via tmp + rename, so concurrent readers never see partial
 JSON. The `meta` field is the extension slot — readers ignore unknown
 keys, so schema additions don't break older consumers.
+
+## Standalone Electron app
+
+Launch a focused window showing the same ServicesPanel cam embeds:
+
+```bash
+npm run app:dev       # electron-vite dev with HMR (during camsys development)
+npm run app:build     # production bundle → out/main, out/preload, out/renderer
+npm run app           # launch the built bundle
+```
+
+Other apps can spawn it the same way cam spawns docskit — via
+camsys's own `run()` for tracking, or via plain `child_process.spawn`:
+
+```ts
+import { run } from 'camsys'
+
+void run({
+  name: 'camsys:app',
+  argv: [
+    'node_modules/.bin/electron',
+    'node_modules/camsys/out/main/index.js',
+  ],
+  detach: true,
+})
+```
+
+The app is dev tooling — no auto-launch, no system tray. Open when
+you want visibility; close when you don't. Same Electron pattern as
+docskit's docs app.
 
 ## Library face
 
