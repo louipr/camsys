@@ -17,13 +17,14 @@
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
       "require": "./dist/cjs/ui/index.js"
-    }
+    },
+    "./ui/styles.css": "./dist/ui/styles.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "lib:build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs",
+    "lib:build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs && cp ui/styles.css dist/ui/styles.css",
     "app:build": "electron-vite build",
     "app:dev": "electron-vite dev",
     "app": "electron .",

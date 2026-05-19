@@ -7,8 +7,8 @@
  */
 
 import {
-  deleteEntry,
   isPidAlive,
+  killService,
   listEntries,
   readEntry,
   sweepStale,
@@ -71,20 +71,12 @@ export function cmdPort(name: string, kind: 'vite' | 'cdp' = 'vite'): number {
  *  Removes the registry entry whether or not the kill succeeded
  *  (a stale entry shouldn't outlive the kill command). */
 export function cmdKill(name: string, signal: NodeJS.Signals = 'SIGTERM'): number {
-  const e = readEntry(name)
-  if (!e) {
+  const { entry, killed } = killService(name, signal)
+  if (!entry) {
     console.error(`no service named '${name}'`)
     return 1
   }
-  let killed = false
-  try {
-    process.kill(-e.pgid, signal)
-    killed = true
-  } catch {
-    // Group already gone — fine, we'll just delete the stale entry.
-  }
-  deleteEntry(name)
-  console.log(`${killed ? 'sent ' + signal + ' to' : 'cleaned stale entry for'} ${name} (pid=${e.pid} pgid=${e.pgid})`)
+  console.log(`${killed ? 'sent ' + signal + ' to' : 'cleaned stale entry for'} ${name} (pid=${entry.pid} pgid=${entry.pgid})`)
   return 0
 }
 

@@ -15,6 +15,7 @@ export {
   deleteEntry,
   isPidAlive,
   sweepStale,
+  killService,
 } from './registry.js'
 
 /**

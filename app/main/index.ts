@@ -18,8 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import {
   listEntries,
-  readEntry,
-  deleteEntry,
+  killService,
 } from '../../src/registry.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -55,15 +54,7 @@ function registerHandlers(): void {
   ipcMain.handle('camsys:list', () => listEntries())
 
   ipcMain.handle('camsys:kill', async (_e: IpcMainInvokeEvent, name: string) => {
-    const entry = readEntry(name)
-    if (!entry) return // idempotent — already gone
-    try {
-      // Negative pid = whole process group.
-      process.kill(-entry.pgid, 'SIGTERM')
-    } catch {
-      // Group already dead; we still want to drop the entry below.
-    }
-    deleteEntry(name)
+    killService(name)
   })
 }
 

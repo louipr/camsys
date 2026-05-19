@@ -1,0 +1,130 @@
+/**
+ * Default styles for the ServicesPanel component.
+ *
+ * Opt-in: hosts import this when they want camsys's default look.
+ *
+ *   import 'camsys/ui/styles.css'
+ *
+ * The class catalog (overridable in host CSS):
+ *
+ *   .camsys-panel              container
+ *   .camsys-panel-loading      first-fetch placeholder
+ *   .camsys-empty              "(no services)" state
+ *   .camsys-error              error banner (io.list or io.kill threw)
+ *   .camsys-table              <table>
+ *   .camsys-table th           header cells
+ *   .camsys-col-name           name column
+ *   .camsys-col-pid            pid column (right-aligned)
+ *   .camsys-col-port           vite + cdp columns (right-aligned)
+ *   .camsys-col-age            age column (right-aligned)
+ *   .camsys-col-action         actions column
+ *   .camsys-row                <tr> body row
+ *   .camsys-row-link           clickable name (when onOpenService is set)
+ *   .camsys-mono               monospaced cells (pid + ports)
+ *   .camsys-kill               kill button
+ *
+ * Hosts that integrate with their own theme (MUI, Tailwind, etc.) can
+ * skip this file and write their own class declarations instead — the
+ * component only relies on the class names being present, not on any
+ * specific styling.
+ */
+
+.camsys-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.camsys-panel-loading,
+.camsys-empty {
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.camsys-error {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 4px;
+}
+
+.camsys-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.camsys-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1a2438;
+}
+
+.camsys-table th.camsys-col-pid,
+.camsys-table th.camsys-col-port,
+.camsys-table th.camsys-col-age {
+  text-align: right;
+}
+
+.camsys-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+.camsys-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.camsys-mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: right;
+  font-size: 12px;
+}
+
+.camsys-col-action {
+  width: 70px;
+  text-align: right;
+}
+
+.camsys-row-link {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.camsys-row-link:hover {
+  text-decoration: underline;
+}
+
+.camsys-kill {
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  color: #f87171;
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 80ms ease-out;
+}
+.camsys-kill:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+.camsys-kill:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}

@@ -30,7 +30,13 @@
  */
 
 import { spawn } from 'node:child_process'
-import { writeEntry, deleteEntry, type Entry } from './registry.js'
+import {
+  writeEntry,
+  deleteEntry,
+  readEntry,
+  isPidAlive,
+  type Entry,
+} from './registry.js'
 import { pickFreePorts } from './ports.js'
 
 export interface RunOptions {
@@ -61,6 +67,23 @@ const FORWARDED_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
 export async function run(opts: RunOptions): Promise<number> {
   if (opts.argv.length === 0) {
     throw new Error('camsys run: missing command after --')
+  }
+
+  // Refuse to overwrite a live registry entry — second
+  // `camsys run docskit -- ...` while the first is still running
+  // would silently clobber the first's row. Stale entries (PID gone)
+  // are swept automatically.
+  const existing = readEntry(opts.name)
+  if (existing) {
+    if (isPidAlive(existing.pid)) {
+      throw new Error(
+        `camsys run: a service named '${opts.name}' is already running (pid=${existing.pid}). ` +
+        `Use a different name, or kill the existing one: camsys kill ${opts.name}`,
+      )
+    }
+    // Stale — entry exists but the process is gone. Drop it before
+    // we write the new one so we don't accumulate.
+    deleteEntry(opts.name)
   }
 
   const cwd = opts.cwd ?? process.cwd()

@@ -9,6 +9,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ServicesPanel, type ServicesIO } from '../../ui/ServicesPanel.js'
+// Component's own CSS (.camsys-* class catalog) — shipped with the
+// ui subpath, dogfooded here.
+import '../../ui/styles.css'
+// App-shell chrome (.app-header, .app-shell). Local to this app.
 import './styles.css'
 
 declare global {

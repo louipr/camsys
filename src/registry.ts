@@ -131,3 +131,28 @@ export function sweepStale(): string[] {
   }
   return swept
 }
+
+/**
+ * Send a signal to a registered service's process group and drop its
+ * registry entry. The single source of truth for "kill a service":
+ * the CLI's `camsys kill`, cam's `camsys:kill` IPC handler, and the
+ * standalone app's `camsys:kill` handler all call this. Idempotent
+ * — if no entry exists, returns `{ entry: null, killed: false }`.
+ */
+export function killService(
+  name: string,
+  signal: NodeJS.Signals = 'SIGTERM',
+): { entry: Entry | null; killed: boolean } {
+  const entry = readEntry(name)
+  if (!entry) return { entry: null, killed: false }
+  let killed = false
+  try {
+    // Negative pid sends the signal to the whole process group.
+    process.kill(-entry.pgid, signal)
+    killed = true
+  } catch {
+    // Group already gone; we still want to drop the registry entry.
+  }
+  deleteEntry(name)
+  return { entry, killed }
+}
