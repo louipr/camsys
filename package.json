@@ -9,19 +9,21 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
-      "types": "./dist/src/index.d.ts"
+      "require": "./dist/cjs/src/index.js"
     },
     "./ui": {
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
-      "types": "./dist/ui/index.d.ts"
+      "require": "./dist/cjs/ui/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare": "npm run build"
