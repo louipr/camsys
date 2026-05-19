@@ -1,0 +1,35 @@
+{
+  "pattern": "layered",
+  "roles": {
+    "layers": [
+      {
+        "name": "data",
+        "slot": {
+          "paths": [
+            "src/registry.ts",
+            "src/ports.ts",
+            "src/index.ts"
+          ]
+        }
+      },
+      {
+        "name": "application",
+        "slot": {
+          "paths": [
+            "src/spawn.ts",
+            "src/commands.ts"
+          ]
+        }
+      },
+      {
+        "name": "presentation",
+        "slot": {
+          "paths": [
+            "src/cli.ts"
+          ]
+        }
+      }
+    ]
+  },
+  "tests":   { "paths": ["tests"] }
+}
