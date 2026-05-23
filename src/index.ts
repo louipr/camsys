@@ -35,3 +35,12 @@ export {
  * `void run({detach: true, ...})`.
  */
 export { run, type RunOptions } from './spawn.js'
+
+/**
+ * Kernel-picked free port via `bind(0)`. Same primitive `camsys run`
+ * uses for CAM_VITE_PORT / CAM_CDP_PORT — exported for daemon-pattern
+ * apps that need a port for their HTTP server. Tiny race window
+ * between release + caller bind; in practice the ephemeral range
+ * makes collisions negligible.
+ */
+export { pickFreePort, pickFreePorts } from './ports.js'
