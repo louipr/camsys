@@ -4,6 +4,7 @@
   "description": "System-level tooling for the CAM ecosystem. Wraps process launches, allocates free ports, tracks running services in a shared registry, kills process groups cleanly on exit.",
   "type": "module",
   "private": true,
+  "main": "out/main/index.js",
   "bin": {
     "camsys": "./dist/src/cli.js"
   },
