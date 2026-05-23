@@ -44,8 +44,6 @@ import {
   listEntries,
   killService,
   updateEntryMeta,
-  writeEntry,
-  deleteEntry,
   type Entry,
 } from '../../src/registry.js'
 import { pickFreePort } from '../../src/ports.js'
@@ -210,29 +208,21 @@ async function startDaemon(): Promise<string> {
 app.whenReady().then(async () => {
   const daemonUrl = await startDaemon()
 
-  // Make sure the registry has an entry for us, then advertise the
-  // daemon URL on it. Two launch paths to support:
-  //   1. `camsys run` / `cam.camsys.openApp()` — entry already exists
-  //      (camsys run wrote it on spawn). updateEntryMeta merges url in.
-  //   2. `electron-vite dev` (e.g. cam tile's "dev" script, or a dev
-  //      running camsys directly) — no upstream wrapper, no entry.
-  //      updateEntryMeta returns false; we writeEntry a fresh one.
-  // Name comes from CAM_SERVICE_NAME (set by camsys run) and falls
-  // back to 'camsys:app' for standalone launches.
+  // The app is always launched under `camsys run` (single registration
+  // path — CLI scripts, cam tile "dev", openApp() all funnel through
+  // it). The wrapper has already written the registry entry on spawn;
+  // we just merge our daemon URL in so cam's ProcessDock can route
+  // to it. updateEntryMeta returning false is a programming error
+  // (someone ran this Electron main without the wrapper) — log and
+  // continue; the window still works, just won't be navigable.
   const name = process.env.CAM_SERVICE_NAME ?? 'camsys:app'
   if (!updateEntryMeta(name, { url: daemonUrl })) {
-    writeEntry({
-      name,
-      pid: process.pid,
-      pgid: process.pid,
-      cmd: process.argv.join(' '),
-      cwd: process.cwd(),
-      started: Date.now(),
-      meta: { url: daemonUrl },
-    })
-    // We self-registered, so we own teardown of our own entry too.
-    // The wrapped-by-camsys-run path already has its own cleanup.
-    app.on('will-quit', () => { deleteEntry(name) })
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[camsys-app] no registry entry for '${name}'. ` +
+      `This Electron main must be launched via 'camsys run' ` +
+      `(see package.json scripts). ProcessDock won't track this window.`,
+    )
   }
 
   if (!win) win = createWindow(daemonUrl)

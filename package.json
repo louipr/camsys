@@ -24,12 +24,12 @@
     "dist"
   ],
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node dist/src/cli.js run camsys:app -- electron-vite dev",
     "build": "npm run lib:build",
     "lib:build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs && cp ui/styles.css dist/ui/styles.css",
     "lib:dev": "tsc -p tsconfig.json --watch",
     "app:build": "electron-vite build",
-    "app": "electron .",
+    "app": "node dist/src/cli.js run camsys:app -- electron .",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare": "npm run lib:build",
