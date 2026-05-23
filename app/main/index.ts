@@ -44,6 +44,8 @@ import {
   listEntries,
   killService,
   updateEntryMeta,
+  writeEntry,
+  deleteEntry,
   type Entry,
 } from '../../src/registry.js'
 import { pickFreePort } from '../../src/ports.js'
@@ -208,12 +210,30 @@ async function startDaemon(): Promise<string> {
 app.whenReady().then(async () => {
   const daemonUrl = await startDaemon()
 
-  // The registry entry for this app was written by `camsys run` when
-  // cam spawned us (or by an outer wrapper). Self-update meta.url so
-  // cam's ProcessDock can route clicks here. Falls back to 'camsys:app'
-  // for standalone-launch paths that didn't go through camsys run.
+  // Make sure the registry has an entry for us, then advertise the
+  // daemon URL on it. Two launch paths to support:
+  //   1. `camsys run` / `cam.camsys.openApp()` — entry already exists
+  //      (camsys run wrote it on spawn). updateEntryMeta merges url in.
+  //   2. `electron-vite dev` (e.g. cam tile's "dev" script, or a dev
+  //      running camsys directly) — no upstream wrapper, no entry.
+  //      updateEntryMeta returns false; we writeEntry a fresh one.
+  // Name comes from CAM_SERVICE_NAME (set by camsys run) and falls
+  // back to 'camsys:app' for standalone launches.
   const name = process.env.CAM_SERVICE_NAME ?? 'camsys:app'
-  updateEntryMeta(name, { url: daemonUrl })
+  if (!updateEntryMeta(name, { url: daemonUrl })) {
+    writeEntry({
+      name,
+      pid: process.pid,
+      pgid: process.pid,
+      cmd: process.argv.join(' '),
+      cwd: process.cwd(),
+      started: Date.now(),
+      meta: { url: daemonUrl },
+    })
+    // We self-registered, so we own teardown of our own entry too.
+    // The wrapped-by-camsys-run path already has its own cleanup.
+    app.on('will-quit', () => { deleteEntry(name) })
+  }
 
   if (!win) win = createWindow(daemonUrl)
 

@@ -24,12 +24,12 @@
     "dist"
   ],
   "scripts": {
-    "lib:build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs && cp ui/styles.css dist/ui/styles.css",
-    "app:build": "electron-vite build",
-    "app:dev": "electron-vite dev",
-    "app": "electron .",
+    "dev": "electron-vite dev",
     "build": "npm run lib:build",
-    "dev": "tsc -p tsconfig.json --watch",
+    "lib:build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node scripts/emit-cjs-pkg.mjs && cp ui/styles.css dist/ui/styles.css",
+    "lib:dev": "tsc -p tsconfig.json --watch",
+    "app:build": "electron-vite build",
+    "app": "electron .",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare": "npm run lib:build",
