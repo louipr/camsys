@@ -16,6 +16,9 @@ export {
   isPidAlive,
   sweepStale,
   killService,
+  updateEntryMeta,
+  focusService,
+  minimizeService,
 } from './registry.js'
 
 /**

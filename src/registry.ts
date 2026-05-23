@@ -135,9 +135,10 @@ export function sweepStale(): string[] {
 /**
  * Send a signal to a registered service's process group and drop its
  * registry entry. The single source of truth for "kill a service":
- * the CLI's `camsys kill`, cam's `camsys:kill` IPC handler, and the
- * standalone app's `camsys:kill` handler all call this. Idempotent
- * — if no entry exists, returns `{ entry: null, killed: false }`.
+ * the CLI's `camsys kill`, cam's `cam.camsys.kill()` api method, and
+ * the standalone app's `POST /api/services/kill` HTTP endpoint all
+ * funnel through here. Idempotent — if no entry exists, returns
+ * `{ entry: null, killed: false }`.
  */
 export function killService(
   name: string,
@@ -155,4 +156,88 @@ export function killService(
   }
   deleteEntry(name)
   return { entry, killed }
+}
+
+/**
+ * Merge a meta update into an existing entry on disk. Used by
+ * launched apps to self-report extension data their parent
+ * spawner couldn't know — most notably the daemon URL once they've
+ * stood up an HTTP server.
+ *
+ * Atomic write semantics same as writeEntry. No-op if the entry
+ * doesn't exist (returns false).
+ */
+export function updateEntryMeta(
+  name: string,
+  meta: Record<string, unknown>,
+): boolean {
+  const entry = readEntry(name)
+  if (!entry) return false
+  entry.meta = { ...entry.meta, ...meta }
+  writeEntry(entry)
+  return true
+}
+
+/**
+ * Bring a registered service's OS window to the front. Two paths:
+ *
+ *   1. If the entry advertises `meta.url`, POST to
+ *      `${meta.url}cam-host/window-state` with `{action: 'focus'}`.
+ *      The launched app has implemented this endpoint and signals
+ *      its own BrowserWindow to focus.
+ *
+ *   2. Else fall back to AppleScript: `tell application "<name>" to
+ *      activate`. Works for any app macOS knows about; no-op on
+ *      non-darwin platforms.
+ *
+ * Returns true when the signal was dispatched (regardless of
+ * whether the window actually came to the front — fire-and-forget).
+ */
+export function focusService(name: string): boolean {
+  return signalWindowState(name, 'focus')
+}
+
+/**
+ * Hide a registered service's OS window. Same dispatch shape as
+ * `focusService`: prefers the daemon endpoint, falls back to
+ * AppleScript on macOS.
+ */
+export function minimizeService(name: string): boolean {
+  return signalWindowState(name, 'minimize')
+}
+
+function signalWindowState(name: string, action: 'focus' | 'minimize'): boolean {
+  const entry = readEntry(name)
+  if (!entry) return false
+  const url = typeof entry.meta?.url === 'string' ? (entry.meta.url as string) : null
+  if (url) {
+    // Fire-and-forget POST to the launched app's own endpoint.
+    // The app's HTTP server handles platform specifics.
+    const endpoint = url.endsWith('/') ? `${url}cam-host/window-state` : `${url}/cam-host/window-state`
+    void fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action }),
+    }).catch(() => {
+      // App down or doesn't implement the endpoint — fall back below.
+      appleScriptFallback(name, action)
+    })
+    return true
+  }
+  return appleScriptFallback(name, action)
+}
+
+function appleScriptFallback(name: string, action: 'focus' | 'minimize'): boolean {
+  if (process.platform !== 'darwin') return false
+  // The app's display name in macOS is usually the bundle title,
+  // not the registry name. Best-effort by registry name first;
+  // the Electron window title (e.g. "camsys — running services")
+  // would be a better hook but isn't always parseable.
+  const script = action === 'focus'
+    ? `tell application "${name}" to activate`
+    : `tell application "System Events" to set visible of process "${name}" to false`
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { spawn } = require('node:child_process') as typeof import('node:child_process')
+  spawn('osascript', ['-e', script], { stdio: 'ignore', detached: true }).unref()
+  return true
 }

@@ -1,14 +1,16 @@
 /**
  * electron-vite config for the camsys standalone app.
  *
- * Three targets, same shape as docskit's:
- *   app/main     → out/main/index.js       (Electron main)
- *   app/preload  → out/preload/index.mjs   (contextBridge preload)
+ * Two targets — no preload. The renderer talks to the main process
+ * over HTTP (main runs an HTTP server on a free port; renderer
+ * `loadURL`s into it). Same daemon-WS pattern documented in
+ * cam/docs/architecture/launched-apps.md.
+ *   app/main     → out/main/index.js       (Electron main + HTTP daemon)
  *   app/renderer → out/renderer/           (React renderer, Vite-bundled)
  *
  * Renderer dev-server port is dynamic — reads CAM_VITE_PORT (set when
  * camsys spawns itself via `camsys run`) or falls back to kernel-picked
- * (port 0). Never hardcoded. Same pattern docskit follows.
+ * (port 0). Never hardcoded.
  */
 import { resolve } from 'node:path'
 import { defineConfig } from 'electron-vite'
@@ -20,13 +22,6 @@ export default defineConfig({
       externalizeDeps: true,
       lib: { entry: resolve(__dirname, 'app/main/index.ts') },
       outDir: resolve(__dirname, 'out/main'),
-    },
-  },
-  preload: {
-    build: {
-      externalizeDeps: true,
-      lib: { entry: resolve(__dirname, 'app/preload/index.ts') },
-      outDir: resolve(__dirname, 'out/preload'),
     },
   },
   renderer: {

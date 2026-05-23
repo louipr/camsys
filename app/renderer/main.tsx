@@ -1,10 +1,18 @@
 /**
- * camsys app renderer — mounts a single ServicesPanel as the whole UI.
+ * camsys app renderer — mounts ServicesPanel as the whole UI.
  *
- * The IO adapter wraps window.camsysAPI (set by the preload script);
- * the panel itself comes from the public ui subpath we ship to other
- * hosts (cam, etc.). So this file is the canonical dogfood — if the
- * standalone app works, cam's embed works.
+ * IO is HTTP `fetch` against the same origin (camsys's own daemon).
+ * No preload, no `window.camsysAPI`, no contextBridge — the renderer
+ * is just a web page that happens to be hosted by Electron's window
+ * sometimes, and by cam's BrowserWindow other times (when cam
+ * navigates to this app's daemon URL — see
+ * `cam/docs/architecture/launched-apps.md`).
+ *
+ * When loaded inside cam (mobile-mode navigate-away), `document.referrer`
+ * is cam's daemon (e.g. `http://localhost:5200/`). We surface a "Back
+ * to cam" chip in that case so users have a one-click exit. When
+ * loaded standalone (desktop-mode detached window), the referrer is
+ * empty and the chip stays hidden.
  */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -15,32 +23,58 @@ import '../../ui/styles.css'
 // App-shell chrome (.app-header, .app-shell). Local to this app.
 import './styles.css'
 
-declare global {
-  interface Window {
-    camsysAPI?: {
-      list(): Promise<unknown[]>
-      kill(name: string): Promise<void>
-    }
-  }
-}
-
 const io: ServicesIO = {
   list: async () => {
-    if (!window.camsysAPI) throw new Error('camsysAPI missing — Electron preload not loaded')
-    return window.camsysAPI.list() as ReturnType<ServicesIO['list']>
+    const r = await fetch('/api/services')
+    if (!r.ok) throw new Error(`list failed: ${r.status}`)
+    return r.json() as ReturnType<ServicesIO['list']>
   },
-  kill: (name) => {
-    if (!window.camsysAPI) throw new Error('camsysAPI missing — Electron preload not loaded')
-    return window.camsysAPI.kill(name)
+  kill: async (name) => {
+    const r = await fetch('/api/services/kill', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    if (!r.ok) throw new Error(`kill failed: ${r.status}`)
   },
+}
+
+/** True when this renderer was loaded by cam's BrowserWindow
+ *  navigating to our daemon URL (mobile-mode navigate-away). */
+function loadedInsideCam(): boolean {
+  const ref = document.referrer
+  if (!ref) return false
+  try {
+    const u = new URL(ref)
+    // cam's daemon is on 5200 in the documented default. Be lenient
+    // about scheme/host — match on port to keep this resilient if cam
+    // ever moves behind a different host (e.g. Cloudflare tunnel).
+    return u.port === '5200'
+  } catch { return false }
 }
 
 function App() {
+  const insideCam = loadedInsideCam()
   return (
     <div className="app-shell">
       <header className="app-header">
         <h1>camsys</h1>
         <p>Running services tracked at <code>~/.cam/run/</code></p>
+        {insideCam && (
+          <a
+            href="http://localhost:5200/"
+            style={{
+              display: 'inline-block', marginTop: 8,
+              padding: '4px 10px', fontSize: 12,
+              borderRadius: 999, textDecoration: 'none',
+              background: 'rgba(96, 165, 250, 0.15)',
+              color: '#93c5fd',
+              border: '1px solid rgba(96, 165, 250, 0.3)',
+            }}
+          >
+            ← Back to cam
+          </a>
+        )}
       </header>
       <main>
         <ServicesPanel io={io} refreshIntervalMs={2000} />
