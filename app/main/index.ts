@@ -62,6 +62,7 @@ const MIME: Record<string, string> = {
 }
 
 let win: BrowserWindow | null = null
+let currentDaemonUrl = ''
 
 function createWindow(daemonUrl: string): BrowserWindow {
   const w = new BrowserWindow({
@@ -119,19 +120,24 @@ function handleApi(
   }
   // POST /cam-host/window-state { action }
   // Called by cam's focusService / minimizeService primitives.
+  //
+  // `focus` creates the BrowserWindow if it doesn't exist — that's
+  // the path that handles cam flipping from mobile→desktop after a
+  // launch (mobile launches start headless via CAM_HOST_MODE=mobile;
+  // the first focus request after the flip materializes the window).
   if (url === '/cam-host/window-state' && req.method === 'POST') {
     void readJsonBody(req).then((body) => {
       const action = (body as { action?: string } | null)?.action
       if (action !== 'focus' && action !== 'minimize') {
         return jsonResponse(res, 400, { error: 'action must be focus|minimize' })
       }
-      if (!win) return jsonResponse(res, 503, { error: 'no window' })
       if (action === 'focus') {
+        if (!win) win = createWindow(currentDaemonUrl)
         if (win.isMinimized()) win.restore()
         win.show()
         win.focus()
       } else {
-        win.minimize()
+        if (win) win.minimize()
       }
       jsonResponse(res, 200, { ok: true })
     }).catch((e) => jsonResponse(res, 400, { error: String(e) }))
@@ -207,6 +213,7 @@ async function startDaemon(): Promise<string> {
 
 app.whenReady().then(async () => {
   const daemonUrl = await startDaemon()
+  currentDaemonUrl = daemonUrl
 
   // The app is always launched under `camsys run` (single registration
   // path — CLI scripts, cam tile "dev", openApp() all funnel through
@@ -225,9 +232,18 @@ app.whenReady().then(async () => {
     )
   }
 
-  if (!win) win = createWindow(daemonUrl)
+  // Host mode signals whether a hosting cam wants us to open our own
+  // OS window. In mobile mode cam navigates its own BrowserWindow
+  // into our daemon URL, so a second detached window would just
+  // duplicate the UI on screen. Stay headless and rely on the
+  // hosting cam's BrowserWindow. A later `POST /cam-host/window-state
+  // {action:'focus'}` materializes the window (e.g. user flipped
+  // cam to desktop mode after launch — see handleApi).
+  const headless = process.env.CAM_HOST_MODE === 'mobile'
+  if (!headless && !win) win = createWindow(daemonUrl)
 
   app.on('activate', () => {
+    if (headless) return
     if (BrowserWindow.getAllWindows().length === 0) win = createWindow(daemonUrl)
   })
 })
