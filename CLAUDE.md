@@ -11,10 +11,21 @@ overview (C4 levels + Mermaid diagrams), see the
 
 ## Architecture
 
+The architecture docs follow canonical C4 organization (per
+[c4model.com](https://c4model.com)): one context diagram for the
+system, one container diagram covering all four faces, one
+component diagram per non-trivial container. The CLI binary's
+component-level structure is documented inline in
+[02-containers.md](docs/architecture/02-containers.md) because
+the CLI is a thin dispatcher whose substance lives in the
+library module's modules — no separate L3 file earns its keep.
+
 @architecture.json
 @docs/architecture/01-context.md
 @docs/architecture/02-containers.md
-@docs/architecture/03-components.md
+@docs/architecture/03-component-library.md
+@docs/architecture/03-component-ui.md
+@docs/architecture/03-component-electron-app.md
 
 ## The four faces
 

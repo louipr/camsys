@@ -1,127 +1,137 @@
 # Containers (Level 2)
 
-camsys runs as **four distinct deployment shapes from one source
-repo**, all sharing `src/registry.ts` as their single source of
-truth for "what's running." Different consumers reach different
-shapes; nothing in the layout couples them beyond the shared
-registry contract.
-
-## The four containers
+**Scope:** the four runnable / publishable units that make up
+camsys — CLI binary, library module, UI subpath, standalone
+Electron app — plus their connections to the external systems
+from [L1](01-context.md). All four share `src/registry.ts` as
+the single source of truth for "what's running."
 
 ```mermaid
 flowchart TB
-    subgraph CamsysRepo[camsys repo]
-      direction LR
-      CLI[CLI binary<br/><i>dist/src/cli.js<br/>shebang + main()</i>]
-      Lib[Library module<br/><i>dist/src/index.js<br/>npm subpath '.'</i>]
-      UI[UI subpath<br/><i>dist/ui/index.js<br/>npm subpath './ui'</i>]
-      App[Standalone Electron app<br/><i>out/main + out/renderer<br/>uses src/ + ui/ directly</i>]
-    end
+  Dev([Developer]):::person
+  CAMApp([CAM apps]):::person
 
-    Reg[(Registry<br/><i>~/.cam/run/&lt;name&gt;.json</i>)]
-    Children([Wrapped child processes])
-    CamApps([CAM apps<br/><i>cam, audit, docskit, term, cam-plugins</i>]):::ext
+  subgraph CamsysSys["camsys"]
+    CLI[CLI binary<br/><i>dist/src/cli.js<br/>bin entry: 'camsys'</i>]:::container
+    Lib[Library module<br/><i>npm subpath '.'<br/>dist/src/index.js</i>]:::container
+    UI[UI subpath<br/><i>npm subpath './ui'<br/>React components</i>]:::container
+    App[Standalone Electron app<br/><i>out/main + out/renderer<br/>uses src/host + ui/</i>]:::container
+  end
 
-    Dev([Developer]) -->|camsys run/list/etc.| CLI
-    CamApps -->|import { run, startHost, ... } from 'camsys'| Lib
-    CamApps -->|import { ServicesPanel, BackToCam } from 'camsys/ui'| UI
-    Dev -->|electron .|App
-    CamApps -.->|spawn via lib.run&#40;&#41;|App
+  Reg[(Registry<br/><i>~/.cam/run/&lt;name&gt;.json</i>)]:::ext
+  Children([Wrapped child processes]):::person
+  OSPM[OS process model]:::ext
 
-    CLI -->|spawns + monitors| Children
-    Lib -->|spawns + monitors| Children
-    Children -->|read/write own entry| Reg
-    CLI -->|read/write| Reg
-    Lib -->|read/write| Reg
-    UI -->|HTTP fetch via daemon| Reg
-    App -->|HTTP fetch via daemon| Reg
+  Dev -->|"camsys run/list/kill/..."| CLI
+  CAMApp -->|"import { run, startHost, ... }"| Lib
+  CAMApp -->|"import { ServicesPanel, BackToCam } from 'camsys/ui'"| UI
+  Dev -->|"electron . (npm run app)"| App
+  CAMApp -.->|"spawn via library run&#40;&#41;"| App
 
-    classDef ext fill:#333,stroke:#888,color:#ddd
+  CLI -->|spawns + monitors| OSPM
+  Lib -->|spawns + monitors| OSPM
+  Children --> Reg
+  CLI --> Reg
+  Lib --> Reg
+  App -->|HTTP fetch /api/services| Reg
+
+  classDef person fill:#1f3b5c,stroke:#4a7ab0,color:#fff
+  classDef container fill:#2a5293,stroke:#7aa4d4,color:#fff,stroke-width:2px
+  classDef ext fill:#333,stroke:#888,color:#ddd
 ```
 
-The arrows show **who initiates** the interaction. Every container
-ultimately ends at the registry on disk; that's the cross-app
-contract.
+**Notation.** Containers (bold blue) are camsys's deployable
+units. Persons (rounded blue) are humans and other CAM apps from
+[L1](01-context.md). External systems / data stores (gray) are
+the OS process model + the on-disk registry. Solid arrows are
+synchronous calls or direct file I/O; dotted arrows are
+asynchronous / indirect (CAM apps spawning the standalone app via
+the library; children writing their own registry entries).
 
-### Why four containers, not one
+## Containers
 
-| Container | Why it's separate |
+| # | Container | Tech | Responsibility | Consumers |
+|---|---|---|---|---|
+| 1 | **CLI binary** | Node ESM, shebang-executable at `dist/src/cli.js` (declared as `bin: { camsys: ... }` in package.json) | Argv parsing + subcommand dispatch. Wraps the library's `run()`, `listEntries()`, `killService()`, `rebuild()` etc. in terminal-friendly verbs. | Developer at the shell; every CAM app's npm scripts. |
+| 2 | **Library module** | Node-only TypeScript, published as the package's main subpath (`import { … } from 'camsys'`). Zero Electron deps at runtime. | The programmatic surface — `run`, `listEntries`, `readEntry`, `updateEntryMeta`, `killService`, `focusService`, `pickFreePort`, `startHost`, `readJsonBody`, `jsonResponse`, types. | CAM apps' main processes (cam, audit, docskit, term, cam-plugins). |
+| 3 | **UI subpath** | React TSX, published as `camsys/ui`. React + react-dom declared as OPTIONAL peer deps. | The React component surface — `ServicesPanel` (the "what's running" widget), `BackToCam` (the cam-mobile referrer chip), `CAM_DAEMON_PORT` / `CAM_DAEMON_URL` constants. | CAM apps' renderers; this repo's own standalone app. |
+| 4 | **Standalone Electron app** | electron-vite-built bundle. Uses `src/host.ts` (HTTP shell) + `ui/` (renderer components). | The "running services" window. Just a thin shell over the registry — a header + `<ServicesPanel>` + `<BackToCam>`. | Developer (`npm run app`); cam (via `cam.docs.open`-style camsysRun launch). |
+
+## Relationships
+
+| Edge | Protocol / mechanism |
 |---|---|
-| **CLI** | Composable in shell scripts, npm scripts, CI. Doesn't need to load React or @electron/rebuild unless the user explicitly invokes those subcommands. |
-| **Library** | Programmatic spawn from CAM apps' main processes (cam.scripts.runDetached, term.launch, docs.open all flow through `run()`). No CLI parsing overhead. |
-| **UI subpath** | React component consumers (cam's renderer renders `<ServicesPanel>`; every launched app's renderer renders `<BackToCam>`). React is an OPTIONAL peer dep — CLI / library consumers never resolve React. |
-| **Standalone app** | The "what's running" UX surface. Launched by developers (`npm run app`) or programmatically by cam (`cam.docs.open`-style camsys-run). Renders the same ServicesPanel cam embeds, in its own window. |
+| Dev → CLI | Shell process exec; argv. |
+| CAM apps → Library | ESM imports via npm `camsys` subpath; same-process function calls. |
+| CAM apps → UI | ESM imports via `camsys/ui` subpath in renderer bundles (bundled by consumers' vite/electron-vite). |
+| Dev → App | Direct Electron launch (`npm run app`) or via the registry (`camsys run camsys:app -- electron .`). |
+| CAM apps ⇢ App | Indirect — cam spawns the standalone app via `library.run({...detach: true})`. The app is itself a wrapped camsys child. |
+| CLI / Library → OS process model | `child_process.spawn` with `detached: true` for process group creation; signal forwarding via `kill(-pgid, …)`. |
+| Children → Registry | Children import the library's `updateEntryMeta` and write their own entries (e.g. after their daemon binds and they know their URL). |
+| CLI / Library → Registry | Direct atomic-write filesystem I/O via `src/registry.ts`. |
+| App → Registry | HTTP from renderer through the daemon (`startHost`) to the same `src/registry.ts` primitives. |
 
-If they were one container, every consumer would pay the dep cost of
-all of them — react in the CLI, electron-rebuild in the renderer, etc.
-The subpath split keeps each consumer's tree minimal.
+## Per-container notes
 
-## Main process (`app/main/`) — standalone app only
+### 1. CLI binary
 
-The standalone Electron app is itself a CAM-launched app and uses
-camsys's own `startHost`:
+A 105-line entry-point (`src/cli.ts`) that switches on the first
+argv argument and dispatches to library functions. No separate
+"CLI components" — the substance lives in the modules `cli.ts`
+imports (`commands.ts`, `spawn.ts`, `rebuild.ts`), all of which
+are themselves part of the **library module** and documented in
+[03-component-library.md](03-component-library.md). The CLI
+container is the published `bin` entry plus argv parsing. **No
+component diagram for this container** — it's a thin shell, not
+a system with internal structure worth modeling.
 
-| Module | Responsibility |
-|---|---|
-| `app/main/index.ts` | BrowserWindow lifecycle. Calls `startHost({...})` from `src/host.ts`. Passes a HostWindow shim so `/cam-host/window-state {focus}` can lazy-create the window when cam launched us headless. Reads `CAM_HOST_MODE` to decide whether to materialize a window on boot. |
+### 2. Library module
 
-The renderer (`app/renderer/`) is a thin React shell — header + the
-shared `ServicesPanel` + `BackToCam`. No domain logic beyond fetching
-`/api/services` and rendering rows. The same component cam embeds.
+The heart of camsys. Component-level structure detailed in
+[**03-component-library.md**](03-component-library.md) — covers
+the leaf modules (`registry`, `ports`), application modules
+(`spawn`, `commands`, `host`, `rebuild`), and the re-export
+shell (`index`), plus the strict cross-module import rules that
+keep the layering intact.
 
-## Library face (`src/index.ts`)
+### 3. UI subpath
 
-Re-exports from the focused modules:
+Two stateless React components + a CSS file. Component structure
+in [**03-component-ui.md**](03-component-ui.md) — covers
+`ServicesPanel`, `BackToCam`, the `ServicesIO` transport-injection
+shape, and the optional-peer-dep React handling.
 
-- From `registry.ts`: `Entry`, `REGISTRY_DIR`, `registryDir`, `listEntries`, `readEntry`, `deleteEntry`, `isPidAlive`, `sweepStale`, `killService`, `updateEntryMeta`, `focusService`, `minimizeService`
-- From `spawn.ts`: `run`, `RunOptions`
-- From `ports.ts`: `pickFreePort`, `pickFreePorts`
-- From `host.ts`: `startHost`, `readJsonBody`, `jsonResponse`, types
-- From `rebuild.ts`: nothing currently (the CLI uses it directly; library consumers haven't needed it yet — easy to expose later)
+### 4. Standalone Electron app
 
-### Read/write split
+Main process + renderer process. Main uses the library's
+`startHost`; renderer renders the UI subpath's `ServicesPanel`
+with HTTP-fetch transport (instead of cam's IPC transport).
+Component structure in
+[**03-component-electron-app.md**](03-component-electron-app.md).
 
-| Read paths | Write paths |
-|---|---|
-| `listEntries()`, `readEntry()`, `isPidAlive()` | `run()` (writes own entry on spawn, deletes on exit) |
-| HTTP `GET /api/services` (via standalone app's daemon) | `updateEntryMeta()` (children advertise their daemon URL) |
-| `sweepStale()` (read + delete) | `deleteEntry()`, `killService()` |
+## What this diagram does NOT show
 
-Atomic-write semantics on the write side (tmp + rename) so concurrent
-reads never see partial JSON. No locking — registry is one file per
-service, contended writes don't happen in practice.
-
-## UI face (`ui/`)
-
-| Component | Consumer surface |
-|---|---|
-| `ServicesPanel` | cam's System tab embeds this; standalone app's renderer hosts it. Takes a `ServicesIO` (read/list/kill verbs) so consumers control transport — cam injects an IPC-backed io; the standalone app injects HTTP fetch. |
-| `BackToCam` | Every launched app's renderer mounts this. Detects `document.referrer.port === '5200'` and renders a "← Back to cam" chip. Style is overridable for inline-header vs floating use cases. |
-
-React + react-dom are **optional peer deps**. CLI / library consumers
-that don't import `camsys/ui` never resolve them.
-
-## Transport model
-
-```
-[CLI / Library consumer]                  [UI consumer]
-    spawn / read registry                    fetch /api/services
-        ↓                                        ↓
-    src/registry.ts                          standalone app's daemon
-        ↓                                        ↓
-    ~/.cam/run/<name>.json   ←-- writes --   src/host.ts (startHost)
-                                                 ↓
-                                             src/registry.ts
-```
-
-No daemon for CLI / library consumers — they touch the filesystem
-directly. The standalone app is the only camsys face that runs a
-daemon (because its renderer needs HTTP to reach main).
+- **Internal modules of any container.** That's the per-container
+  L3 component diagrams.
+- **Deployment topology.** No clustering / replication / load
+  balancing — camsys is local-dev infrastructure on one machine.
+  If we ever build a service that runs across multiple machines,
+  a deployment diagram joins the spec.
+- **External systems camsys doesn't talk to.** No GitHub, no
+  Claude CLI, no MCP servers — those are CAM-app concerns. The
+  registry is the only external surface camsys owns.
+- **Lifecycle / sequence.** Container interactions over time
+  (spawn → register → wait → cleanup) are sequence-level — not
+  shown at L2. See [03-component-library.md](03-component-library.md)
+  for the spawn-lifecycle narrative.
+- **Bundling specifics.** Vite / electron-vite / tsc / cjs-emit
+  details (how each container becomes a published artifact) are
+  implementation detail. See package.json `scripts` + `exports`.
 
 ## Data model
 
-One JSON file per running service. Schema is **intentionally tiny**
-(extensions go in optional `meta`):
+One JSON file per running service. Schema is intentionally tiny;
+extensions go in optional `meta`:
 
 ```json
 {
@@ -140,16 +150,16 @@ One JSON file per running service. Schema is **intentionally tiny**
 }
 ```
 
-Every consumer ignores unknown keys, so schema additions land in
-`meta` without breaking older readers.
+Atomic writes via `writeFileSync(tmp) + renameSync(tmp, target)`
+so concurrent readers never see partial JSON. Every consumer
+ignores unknown keys → schema additions in `meta` don't break
+older readers.
 
 ## Where to go next
 
-- [`03-components.md`](03-components.md) — drill into each module:
-  what `src/registry.ts` actually exposes, how `src/spawn.ts`'s
-  process-group + signal flow works, why `host.ts` was extracted,
-  why `rebuild.ts` lives here instead of in each consumer.
-- [README.md](../../README.md) — consumer-facing CLI + library docs
-  with copy-pasteable integration recipes.
-- [CLAUDE.md](../../CLAUDE.md) — maintainer-facing architectural
-  rules + the extraction lens.
+- ↑ [`01-context.md`](01-context.md) — back to the system-in-environment view.
+- ↓ [`03-component-library.md`](03-component-library.md) — components inside the library module (the substance container).
+- ↓ [`03-component-ui.md`](03-component-ui.md) — components inside the UI subpath.
+- ↓ [`03-component-electron-app.md`](03-component-electron-app.md) — components inside the standalone Electron app.
+- [README.md](../../README.md) — consumer usage.
+- [CLAUDE.md](../../CLAUDE.md) — maintainer rules.

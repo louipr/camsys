@@ -1,84 +1,92 @@
 # Context (Level 1)
 
-camsys is **system-level tooling for the CAM ecosystem** — a CLI +
-library + React components + standalone Electron app, all backed by
-one on-disk registry. It solves three problems other CAM apps would
-otherwise each solve differently: port collisions, service visibility,
-and orphan process cleanup. Every other CAM app (cam, audit, docskit,
-term) imports camsys.
-
-It's an **infrastructure dependency, not a user-facing product**. The
-standalone Electron app exists for developers + cam itself to see
-"what's running," but it's a thin window over the registry — the real
-value is the CLI + library that every other CAM app composes against.
-
-## External actors
+**Scope:** camsys-the-system in its environment — who uses it and
+what it talks to. No internals.
 
 ```mermaid
 flowchart TB
+  %% C4 legend: persons = blue; system-in-scope = bold blue;
+  %% external systems / actors = gray.
   Dev([Developer]):::person
   CAMApp([CAM apps<br/><i>cam, audit, docskit,<br/>term, cam-plugins</i>]):::person
+  Children([Wrapped child processes<br/><i>cam, audit, docskit, term,<br/>vitest, electron-vite, …</i>]):::person
 
   subgraph CamsysSys[" "]
-    Camsys[camsys<br/><i>CLI + library + UI + standalone app</i>]:::system
+    Camsys[camsys<br/><i>System in scope</i>]:::system
   end
 
-  OSPM[OS process model<br/><i>child_process.spawn,<br/>process groups, SIGTERM</i>]:::ext
-  Kernel[Kernel<br/><i>free port allocation<br/>via bind&#40;0&#41;</i>]:::ext
-  FS[Local filesystem<br/><i>~/.cam/run/&lt;name&gt;.json<br/>atomic tmp+rename</i>]:::ext
-  ElectronRebuild[&#64;electron/rebuild<br/><i>native module ABI flipper<br/>downloads prebuilts</i>]:::ext
-  Children([Wrapped child processes<br/><i>cam, audit, docskit, term,<br/>vitest, electron-vite, etc.</i>]):::person
+  OSPM[OS process model<br/><i>spawn, process groups,<br/>SIGTERM</i>]:::ext
+  Kernel[Kernel<br/><i>free port via bind&#40;0&#41;</i>]:::ext
+  FS[Local filesystem<br/><i>~/.cam/run/&lt;name&gt;.json</i>]:::ext
+  ElectronRebuild[&#64;electron/rebuild<br/><i>native module ABI flipper</i>]:::ext
 
-  Dev -->|CLI: camsys run/list/kill/rebuild| Camsys
-  CAMApp -->|library: import { run, startHost, listEntries, ... }| Camsys
-  CAMApp -->|UI: import { ServicesPanel, BackToCam } from 'camsys/ui'| Camsys
-  Camsys -->|spawn detached + setsid| OSPM
-  Camsys -->|bind&#40;0&#41; → read port → release| Kernel
-  Camsys -->|atomic writes for entries| FS
-  Camsys -->|rebuild --target=electron| ElectronRebuild
-  Camsys -->|launch + monitor + signal-forward| Children
-  Children -->|optional: updateEntryMeta&#40;name, &#123;url&#125;&#41;| FS
+  Dev -->|CLI invocations| Camsys
+  CAMApp -->|library + UI imports| Camsys
+  Camsys -->|spawn / signal / monitor| OSPM
+  Camsys -->|bind&#40;0&#41; → port → release| Kernel
+  Camsys -->|atomic JSON entries| FS
+  Camsys -->|wraps for ABI rebuild| ElectronRebuild
+  Camsys -.->|spawns + tracks| Children
+  Children -.->|updateEntryMeta&#40;url&#41;| FS
 
   classDef person fill:#1f3b5c,stroke:#4a7ab0,color:#fff
   classDef system fill:#2a5293,stroke:#7aa4d4,color:#fff,stroke-width:2px
   classDef ext fill:#333,stroke:#888,color:#ddd
 ```
 
-## What each external actor does for camsys
+**Notation.** Persons (rounded) = humans or other CAM apps;
+system (bold blue) = camsys itself; external systems (gray) = OS
++ kernel + filesystem + the one external npm dep. Solid arrows
+are direct API/CLI calls camsys initiates or receives. Dotted
+arrows show the indirect path through wrapped children (camsys
+spawns them; they then write into the filesystem on their own).
 
-| Actor | camsys interacts with it to… |
+## Elements
+
+| Element | Role |
 |---|---|
-| **Developer** | Wrap a service (`camsys run`), inspect what's running (`camsys list`), kill stuck processes (`camsys kill`), flip native-module ABI (`camsys rebuild`). |
-| **CAM apps** | Import the library face — programmatic spawn via `run({...})`, registry reads via `listEntries()`, HTTP-shell setup via `startHost({...})`, native-rebuild via `rebuild({...})`. Import the UI face — `ServicesPanel` (cam embeds this), `BackToCam` (every launched app's renderer mounts this). |
-| **OS process model** | Spawn children in their own process group (`setsid` / `detached: true`); on the wrapper's exit, `kill(-pgid, SIGTERM)` takes the whole subtree down — no zombie Electron + Vite + worker chains. |
-| **Kernel** | Ask for ephemeral ports via `bind(0)` so two simultaneously-launched services never collide on port 5100 / 5173 / 9222. |
-| **Local filesystem** | One JSON file per running service at `~/.cam/run/<name>.json`. Atomic tmp+rename so concurrent readers never see partial JSON. The registry is the cross-app source of truth — anyone can read it without going through camsys. |
-| **`@electron/rebuild`** | Dynamic-imported only by `camsys rebuild --target=electron` (so CLI/library consumers that don't rebuild never load it). camsys is the only place this dep is referenced in the CAM ecosystem — all consumer repos delegate. |
-| **Wrapped children** | The actual long-running processes (cam, audit, docskit, term, electron-vite dev, vitest, MCP-inspector, etc.). camsys launches them, injects port env vars, monitors exit, and registers/cleans up entries. Children may opt in to advertise their daemon URL via `updateEntryMeta(name, { url })` — cam reads `meta.url` to navigate-away in mobile mode. |
+| **Developer** | Operator who runs CLI verbs (`camsys run / list / kill / rebuild`). Reads `camsys list` output to understand running services. |
+| **CAM apps** | cam, audit, docskit, term, cam-plugins. Import camsys's library face (`run`, `startHost`, `listEntries`, `pickFreePort`, `rebuild`) from their main processes; import the UI face (`ServicesPanel`, `BackToCam`) from their renderers. |
+| **camsys** *(system in scope)* | The four faces (CLI + library + UI + standalone app) backed by one shared on-disk registry. |
+| **OS process model** | macOS / Linux process primitives camsys depends on: `child_process.spawn`, `detached: true` + `setsid` for process group creation, `kill(-pgid, SIGTERM)` for whole-subtree teardown. |
+| **Kernel** | Source of ephemeral free ports via `bind(0)`. camsys allocates and releases; consumers bind. |
+| **Local filesystem** | `~/.cam/run/<name>.json` — the shared registry. One file per running service, atomic tmp+rename writes, schema documented in [02-containers.md](02-containers.md). |
+| **`@electron/rebuild`** | Single external npm dep with a meaningful runtime role. Dynamic-imported only when `camsys rebuild --target=electron` is invoked. |
+| **Wrapped child processes** | The actual long-running services camsys supervises. May opt in to advertise their daemon URL via `updateEntryMeta()` after startup. |
 
-## What camsys is *not*
+## Key relationships (non-obvious arrows)
 
-- **Not a service mesh.** No routing, no discovery beyond the registry list, no health checks beyond "is the PID alive."
-- **Not a process supervisor.** camsys doesn't restart crashed children, doesn't backoff, doesn't manage a fleet. One spawn = one supervised lifetime.
-- **Not a build tool.** `camsys rebuild` is one CLI verb that wraps `@electron/rebuild` for cross-repo consistency — it doesn't replace electron-builder, electron-vite, or vitest's own runners.
-- **Not the CAM ecosystem's main process or shared kernel.** It's an infrastructure dep that every CAM app imports; it doesn't host them or know about their domain logic.
-- **Not multi-user / multi-machine.** Registry is `~/.cam/run/` on one machine for one user, same as cam itself.
+- **`Dev → camsys` (CLI invocations)** runs through `npx camsys` or
+  the installed `camsys` binary in node_modules. Composable in shell
+  scripts, CI, and every CAM app's package.json scripts.
+- **`Camsys ⇢ Children`** is dashed because the spawn relationship is
+  asymmetric: camsys initiates it, but the children run independently
+  in their own process group. They may outlive camsys (when spawned
+  detached). camsys's role ends at "process running + entry written";
+  the children's own lifecycles are theirs.
+- **`Children ⇢ Filesystem`** is dashed because the children write
+  *to their own entries* without going through camsys (they import
+  `updateEntryMeta` from the camsys library). This is by design — the
+  registry is a flat shared contract, not an RPC interface.
 
-## Why one repo for four faces
+## What this diagram does NOT show
 
-The CLI, library, UI, and standalone app **all back the same registry**.
-Splitting them across repos would mean:
-- duplicated registry-format definition (drift risk on the shared
-  contract every CAM app depends on)
-- duplicated port-pick / atomic-write helpers
-- N-1 trips through Git-URL dep updates for any cross-cutting change
+- **Internal containers of camsys.** That's [02-containers.md](02-containers.md) — the CLI binary, library module, UI subpath, standalone Electron app.
+- **Internal modules of any container.** That's the L3 component diagrams (see [02-containers.md](02-containers.md) for the per-container links).
+- **Deployment topology.** camsys is local-dev infrastructure on one developer's machine — no distributed deployment to model.
+- **External systems camsys does NOT depend on.** Notable absences (deliberate): no network beyond optional `meta.url` HTTP that consumers serve; no databases; no message brokers; no cloud services; no auth systems.
+- **What's *inside* the children.** They're black boxes from camsys's view — it spawns them, watches them, and reaps their entry on exit. Their internal architecture is each app's own concern (see cam's `docs/architecture/`, audit's `docs/`, etc.).
 
-One repo, one source of truth, multiple consumption shapes. Tests
-exercise each face independently (`tests/{ports,registry,spawn,host,ui}.test.ts`).
+## What camsys is *not* (scope guard)
+
+- **Not a service mesh.** No routing, no discovery beyond registry list, no health checks beyond "is the PID alive."
+- **Not a process supervisor.** No restart, no backoff, no fleet management. One spawn = one supervised lifetime.
+- **Not a build tool.** `camsys rebuild` wraps `@electron/rebuild` for cross-repo consistency; it doesn't replace electron-builder, electron-vite, or vitest.
+- **Not the CAM ecosystem's main process.** It's an infrastructure dep every CAM app imports; it doesn't host them or know about their domain logic.
+- **Not multi-user / multi-machine.** Registry is one directory on one developer's machine.
 
 ## Where to go next
 
-- [`02-containers.md`](02-containers.md) — inside camsys: the four faces (CLI binary, library module, UI subpath, standalone Electron app), how they share `src/registry.ts`, what each one exposes.
-- [`03-components.md`](03-components.md) — module-level view: per-file responsibilities + cross-module call graph + the extraction lens that put `startHost`/`rebuild`/`BackToCam` in camsys.
-- [README.md](../../README.md) — consumer-facing usage (CLI commands, integration recipe, registry format).
-- [CLAUDE.md](../../CLAUDE.md) — maintainer + AI-agent contract (architectural rules, what NOT to do).
+- ↓ [`02-containers.md`](02-containers.md) — open the box: the four containers that make up camsys + their interconnections + the external systems each one talks to.
+- [README.md](../../README.md) — consumer-facing CLI + library + integration recipes.
+- [CLAUDE.md](../../CLAUDE.md) — maintainer + AI-agent contract.
