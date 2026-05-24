@@ -5,7 +5,16 @@ repo, all backed by one on-disk registry** at `~/.cam/run/`. Every
 other CAM app (cam, audit, docskit, term) imports camsys.
 
 This file is the maintainer + AI-agent contract. For consumer-side
-"how do I use it" docs, see [README.md](README.md).
+"how do I use it" docs see [README.md](README.md); for architectural
+overview (C4 levels + Mermaid diagrams), see the
+[architecture](docs/architecture/) docs.
+
+## Architecture
+
+@architecture.json
+@docs/architecture/01-context.md
+@docs/architecture/02-containers.md
+@docs/architecture/03-components.md
 
 ## The four faces
 
