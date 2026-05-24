@@ -9,6 +9,12 @@
  *   camsys port <name> [vite|cdp]          print a registered port
  *   camsys kill <name>                     SIGTERM the service's process group
  *   camsys cleanup                         sweep stale registry entries
+ *   camsys rebuild --target=<electron|node> [module...]
+ *                                          flip native modules' compiled
+ *                                          ABI (default: rebuild all
+ *                                          native modules in node_modules).
+ *                                          Wire as postinstall/predev/
+ *                                          pretest in consumer repos.
  *   camsys --help                          this message
  *
  * The double-dash (`--`) in `run` separates camsys's own args from the
@@ -17,6 +23,7 @@
 
 import { run } from './spawn.js'
 import { cmdList, cmdPort, cmdKill, cmdCleanup } from './commands.js'
+import { rebuild } from './rebuild.js'
 
 function printHelp(): void {
   console.log(`camsys — process + port + registry wrapper for the CAM ecosystem
@@ -27,6 +34,9 @@ Usage:
   camsys port <name> [vite|cdp]            print a port (default: vite)
   camsys kill <name>                       kill a service by name
   camsys cleanup                           drop stale registry entries
+  camsys rebuild --target=<electron|node> [module...]
+                                           flip native modules' ABI;
+                                           wire as postinstall/predev/pretest
 
 Spawned children receive:
   CAM_VITE_PORT          ephemeral port (kernel-assigned)
@@ -88,6 +98,21 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'cleanup':
       return cmdCleanup()
+    case 'rebuild': {
+      // Expect: --target=electron|node [module...]
+      const targetArg = rest.find((a) => a.startsWith('--target='))
+      if (!targetArg) {
+        console.error('camsys rebuild: --target=electron or --target=node required')
+        return 2
+      }
+      const target = targetArg.slice('--target='.length)
+      if (target !== 'electron' && target !== 'node') {
+        console.error(`camsys rebuild: unknown target '${target}' (expected electron|node)`)
+        return 2
+      }
+      const modules = rest.filter((a) => !a.startsWith('-'))
+      return await rebuild({ target, modules })
+    }
     default:
       console.error(`unknown subcommand: ${sub}`)
       printHelp()
