@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "4",
+  "namespace": "camsys",
+  "title": "camsys",
+  "description": "System-level tooling for the CAM ecosystem — CLI + library + UI subpath + standalone Electron app, all backed by one on-disk registry at ~/.cam/run/.",
+  "projectType": "library",
+  "categories": [
+    { "id": "overview",     "title": "Overview",     "order": 0 },
+    { "id": "architecture", "title": "Architecture", "order": 1 },
+    { "id": "contributing", "title": "Contributing", "order": 2 }
+  ],
+  "topics": [
+    {
+      "title": "Overview",
+      "description": "What camsys is — system-level tooling for the CAM ecosystem (CLI + library + UI + standalone Electron app, backed by one on-disk registry).",
+      "path": "README.md",
+      "category": "overview",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "Migration notes",
+      "description": "Historical migration notes for consumers upgrading across breaking camsys versions.",
+      "path": "MIGRATION.md",
+      "category": "overview",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "C4 — Context (L1)",
+      "description": "camsys among external actors: developers, CAM apps, OS process model, kernel, filesystem, @electron/rebuild, wrapped children.",
+      "path": "docs/architecture/01-context.md",
+      "category": "architecture",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "C4 — Containers (L2)",
+      "description": "The four runnable / publishable units that make up camsys — CLI binary, library module, UI subpath, standalone Electron app — and their connections.",
+      "path": "docs/architecture/02-containers.md",
+      "category": "architecture",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "C4 — Components: Library module (L3)",
+      "description": "Internal modules of the library container: registry / ports leaves + spawn / commands / host / rebuild application modules + the re-export shell.",
+      "path": "docs/architecture/03-component-library.md",
+      "category": "architecture",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "C4 — Components: UI subpath (L3)",
+      "description": "ServicesPanel + BackToCam + the ServicesIO transport-injection contract that makes the UI components portable across cam (IPC) and the standalone app (HTTP).",
+      "path": "docs/architecture/03-component-ui.md",
+      "category": "architecture",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "C4 — Components: Standalone Electron app (L3)",
+      "description": "Main + renderer breakdown for camsys's own dogfood app, plus the mobile-mode sequence diagram for cam-embedded launches.",
+      "path": "docs/architecture/03-component-electron-app.md",
+      "category": "architecture",
+      "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "Development rules (CLAUDE.md)",
+      "description": "Maintainer + AI-agent contract: the four faces, what lives where, architectural rules, extraction lens for when to add a new public surface.",
+      "path": "CLAUDE.md",
+      "category": "contributing",
+      "lastReviewed": "2026-05-23"
+    }
+  ]
+}
