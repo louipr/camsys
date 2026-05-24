@@ -7,8 +7,7 @@
         "slot": {
           "paths": [
             "src/registry.ts",
-            "src/ports.ts",
-            "src/index.ts"
+            "src/ports.ts"
           ]
         }
       },
@@ -17,7 +16,9 @@
         "slot": {
           "paths": [
             "src/spawn.ts",
-            "src/commands.ts"
+            "src/commands.ts",
+            "src/host.ts",
+            "src/rebuild.ts"
           ]
         }
       },
@@ -25,11 +26,16 @@
         "name": "presentation",
         "slot": {
           "paths": [
-            "src/cli.ts"
+            "src/cli.ts",
+            "src/index.ts",
+            "ui",
+            "app"
           ]
         }
       }
     ]
   },
-  "tests":   { "paths": ["tests"] }
+  "tests":   { "paths": ["tests"] },
+  "scripts": { "paths": ["scripts"] },
+  "docs":    { "paths": ["docs"] }
 }
