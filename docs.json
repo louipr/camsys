@@ -39,23 +39,9 @@
       "lastReviewed": "2026-05-23"
     },
     {
-      "title": "C4 — Components: Library module (L3)",
-      "description": "Internal modules of the library container: registry / ports leaves + spawn / commands / host / rebuild application modules + the re-export shell.",
-      "path": "docs/architecture/03-component-library.md",
-      "category": "architecture",
-      "lastReviewed": "2026-05-23"
-    },
-    {
-      "title": "C4 — Components: UI subpath (L3)",
-      "description": "ServicesPanel + BackToCam + the ServicesIO transport-injection contract that makes the UI components portable across cam (IPC) and the standalone app (HTTP).",
-      "path": "docs/architecture/03-component-ui.md",
-      "category": "architecture",
-      "lastReviewed": "2026-05-23"
-    },
-    {
-      "title": "C4 — Components: Standalone Electron app (L3)",
-      "description": "Main + renderer breakdown for camsys's own dogfood app, plus the mobile-mode sequence diagram for cam-embedded launches.",
-      "path": "docs/architecture/03-component-electron-app.md",
+      "title": "C4 — Components (L3)",
+      "description": "One component diagram per non-trivial container — library module (registry/ports leaves + spawn/commands/host/rebuild + re-export shell), UI subpath (ServicesPanel + BackToCam + the ServicesIO transport-injection contract), and standalone Electron app (main + renderer, plus the mobile-mode sequence).",
+      "path": "docs/architecture/03-components.md",
       "category": "architecture",
       "lastReviewed": "2026-05-23"
     },

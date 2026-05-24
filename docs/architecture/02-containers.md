@@ -80,16 +80,16 @@ argv argument and dispatches to library functions. No separate
 "CLI components" — the substance lives in the modules `cli.ts`
 imports (`commands.ts`, `spawn.ts`, `rebuild.ts`), all of which
 are themselves part of the **library module** and documented in
-[03-component-library.md](03-component-library.md). The CLI
-container is the published `bin` entry plus argv parsing. **No
-component diagram for this container** — it's a thin shell, not
-a system with internal structure worth modeling.
+[03-components.md § Library module](03-components.md#library-module).
+The CLI container is the published `bin` entry plus argv parsing.
+**No component diagram for this container** — it's a thin shell,
+not a system with internal structure worth modeling.
 
 ### 2. Library module
 
 The heart of camsys. Component-level structure detailed in
-[**03-component-library.md**](03-component-library.md) — covers
-the leaf modules (`registry`, `ports`), application modules
+[**03-components.md § Library module**](03-components.md#library-module) —
+covers the leaf modules (`registry`, `ports`), application modules
 (`spawn`, `commands`, `host`, `rebuild`), and the re-export
 shell (`index`), plus the strict cross-module import rules that
 keep the layering intact.
@@ -97,9 +97,10 @@ keep the layering intact.
 ### 3. UI subpath
 
 Two stateless React components + a CSS file. Component structure
-in [**03-component-ui.md**](03-component-ui.md) — covers
-`ServicesPanel`, `BackToCam`, the `ServicesIO` transport-injection
-shape, and the optional-peer-dep React handling.
+in [**03-components.md § UI subpath**](03-components.md#ui-subpath) —
+covers `ServicesPanel`, `BackToCam`, the `ServicesIO`
+transport-injection shape, and the optional-peer-dep React
+handling.
 
 ### 4. Standalone Electron app
 
@@ -107,12 +108,12 @@ Main process + renderer process. Main uses the library's
 `startHost`; renderer renders the UI subpath's `ServicesPanel`
 with HTTP-fetch transport (instead of cam's IPC transport).
 Component structure in
-[**03-component-electron-app.md**](03-component-electron-app.md).
+[**03-components.md § Standalone Electron app**](03-components.md#standalone-electron-app).
 
 ## What this diagram does NOT show
 
 - **Internal modules of any container.** That's the per-container
-  L3 component diagrams.
+  sections in [03-components.md](03-components.md).
 - **Deployment topology.** No clustering / replication / load
   balancing — camsys is local-dev infrastructure on one machine.
   If we ever build a service that runs across multiple machines,
@@ -122,7 +123,7 @@ Component structure in
   registry is the only external surface camsys owns.
 - **Lifecycle / sequence.** Container interactions over time
   (spawn → register → wait → cleanup) are sequence-level — not
-  shown at L2. See [03-component-library.md](03-component-library.md)
+  shown at L2. See [03-components.md § Spawn lifecycle](03-components.md#spawn-lifecycle-sequence--what-happens-over-time)
   for the spawn-lifecycle narrative.
 - **Bundling specifics.** Vite / electron-vite / tsc / cjs-emit
   details (how each container becomes a published artifact) are
@@ -158,8 +159,6 @@ older readers.
 ## Where to go next
 
 - ↑ [`01-context.md`](01-context.md) — back to the system-in-environment view.
-- ↓ [`03-component-library.md`](03-component-library.md) — components inside the library module (the substance container).
-- ↓ [`03-component-ui.md`](03-component-ui.md) — components inside the UI subpath.
-- ↓ [`03-component-electron-app.md`](03-component-electron-app.md) — components inside the standalone Electron app.
+- ↓ [`03-components.md`](03-components.md) — components inside each non-trivial container (library module, UI subpath, standalone Electron app).
 - [README.md](../../README.md) — consumer usage.
 - [CLAUDE.md](../../CLAUDE.md) — maintainer rules.
