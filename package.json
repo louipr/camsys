@@ -1,6 +1,6 @@
 {
   "name": "camsys",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "System-level tooling for the CAM ecosystem. Wraps process launches, allocates free ports, tracks running services in a shared registry, kills process groups cleanly on exit.",
   "type": "module",
   "private": true,

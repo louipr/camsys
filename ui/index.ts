@@ -11,3 +11,6 @@
 
 export { ServicesPanel } from './ServicesPanel.js'
 export type { ServicesPanelProps, ServicesIO, Entry } from './ServicesPanel.js'
+
+export { BackToCam, CAM_DAEMON_PORT, CAM_DAEMON_URL } from './BackToCam.js'
+export type { BackToCamProps } from './BackToCam.js'
