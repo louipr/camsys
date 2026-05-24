@@ -44,3 +44,23 @@ export { run, type RunOptions } from './spawn.js'
  * makes collisions negligible.
  */
 export { pickFreePort, pickFreePorts } from './ports.js'
+
+/**
+ * Reusable HTTP shell for CAM-launched apps. Every cam-launched
+ * Electron app needs the same scaffolding: HTTP server, static
+ * bundle serve with SPA fallback, vite dev proxy, the
+ * `/cam-host/window-state` spec endpoint. Pre-extraction that was
+ * ~100 lines of identical boilerplate copied across cam, audit,
+ * docskit, camsys's own app, and term. `startHost` owns that
+ * scaffolding; per-app routes hook in via `onRequest`. Optional
+ * WebSocket upgrade + SSE event channel are first-class config.
+ */
+export {
+  startHost,
+  readJsonBody,
+  jsonResponse,
+  type HostConfig,
+  type HostHandle,
+  type HostWindow,
+  type RequestHandler,
+} from './host.js'
