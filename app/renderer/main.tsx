@@ -16,6 +16,7 @@
  */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BackToCam } from '../../ui/BackToCam.js'
 import { ServicesPanel, type ServicesIO } from '../../ui/ServicesPanel.js'
 // Component's own CSS (.camsys-* class catalog) — shipped with the
 // ui subpath, dogfooded here.
@@ -39,42 +40,17 @@ const io: ServicesIO = {
   },
 }
 
-/** True when this renderer was loaded by cam's BrowserWindow
- *  navigating to our daemon URL (mobile-mode navigate-away). */
-function loadedInsideCam(): boolean {
-  const ref = document.referrer
-  if (!ref) return false
-  try {
-    const u = new URL(ref)
-    // cam's daemon is on 5200 in the documented default. Be lenient
-    // about scheme/host — match on port to keep this resilient if cam
-    // ever moves behind a different host (e.g. Cloudflare tunnel).
-    return u.port === '5200'
-  } catch { return false }
-}
-
 function App() {
-  const insideCam = loadedInsideCam()
   return (
     <div className="app-shell">
       <header className="app-header">
         <h1>camsys</h1>
         <p>Running services tracked at <code>~/.cam/run/</code></p>
-        {insideCam && (
-          <a
-            href="http://localhost:5200/"
-            style={{
-              display: 'inline-block', marginTop: 8,
-              padding: '4px 10px', fontSize: 12,
-              borderRadius: 999, textDecoration: 'none',
-              background: 'rgba(96, 165, 250, 0.15)',
-              color: '#93c5fd',
-              border: '1px solid rgba(96, 165, 250, 0.3)',
-            }}
-          >
-            ← Back to cam
-          </a>
-        )}
+        {/* Inline-in-header (override BackToCam's default fixed
+            position). Same component the other CAM apps import via
+            'camsys/ui'; here we reach it via the local source so
+            dogfooding catches breaking changes immediately. */}
+        <BackToCam style={{ position: 'static', display: 'inline-block', marginTop: 8 }} />
       </header>
       <main>
         <ServicesPanel io={io} refreshIntervalMs={2000} />
