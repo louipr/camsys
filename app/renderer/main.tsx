@@ -6,7 +6,7 @@
  * is just a web page that happens to be hosted by Electron's window
  * sometimes, and by cam's BrowserWindow other times (when cam
  * navigates to this app's daemon URL — see
- * `cam/docs/architecture/launched-apps.md`).
+ * `camsys/docs/launched-apps.md` for the contract).
  *
  * When loaded inside cam (mobile-mode navigate-away), `document.referrer`
  * is cam's daemon (e.g. `http://localhost:5200/`). We surface a "Back

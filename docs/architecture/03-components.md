@@ -181,7 +181,7 @@ electron + vite + worker chains.
   over HTTP (`/cam-host/window-state`, SPA fallback semantics,
   vite-proxy passthrough rules) is the launched-app contract
   documented in cam's
-  [docs/architecture/launched-apps.md](../../../cam/docs/architecture/launched-apps.md).
+  [`docs/launched-apps.md`](../launched-apps.md).
 
 ---
 
@@ -265,7 +265,7 @@ function loadedInsideCam(camPort: string): boolean {
 
 The rule: cam's BrowserWindow navigates `window.location.href` to
 a launched app's daemon URL in mobile mode (see cam's
-[launched-apps.md](../../../cam/docs/architecture/launched-apps.md)).
+[`docs/launched-apps.md`](../launched-apps.md)).
 That sets `document.referrer` to cam's daemon URL. We detect by
 port (default `'5200'` — cam's daemon port per ADR-010) because
 host varies (localhost vs Cloudflare-tunnelled remote.cyrustek.com).
@@ -406,7 +406,7 @@ comes from `startHost`.
 
 | Edge | Transport |
 |---|---|
-| AppMain ↔ Renderer | HTTP via the `startHost` daemon (loopback). No preload script, no contextBridge, no `ipcMain.handle`. The renderer reaches main exclusively through the daemon's HTTP endpoints. Same shape as every other CAM-launched app (the "Phase 4b" architecture documented in cam's launched-apps.md). |
+| AppMain ↔ Renderer | HTTP via the `startHost` daemon (loopback). No preload script, no contextBridge, no `ipcMain.handle`. The renderer reaches main exclusively through the daemon's HTTP endpoints. Same shape as every other CAM-launched app — the [launched-app contract](../launched-apps.md) is the spec. |
 | AppMain → Registry primitives | Direct ESM import of `listEntries` / `killService` from `camsys` (since this is camsys's own repo, it imports relatively from `../../src/...`; external CAM apps would `import { ... } from 'camsys'`). |
 | Renderer → ServicesPanel + BackToCam | Direct ESM import from camsys/ui (relative `../../ui/...` for dogfood; external apps `import { ... } from 'camsys/ui'`). |
 
@@ -485,4 +485,4 @@ tracking).
 - ↑ [`02-containers.md`](02-containers.md) — back to the container view.
 - ↑ [`01-context.md`](01-context.md) — camsys among external actors.
 - [CLAUDE.md](../../CLAUDE.md) — maintainer rules + the extraction lens.
-- cam's [launched-apps.md](../../../cam/docs/architecture/launched-apps.md) — the launched-app contract `startHost` implements + that the standalone app exemplifies.
+- [`docs/launched-apps.md`](../launched-apps.md) — the launched-app contract `startHost` implements + that the standalone app exemplifies.

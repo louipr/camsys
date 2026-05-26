@@ -1,8 +1,8 @@
 /**
  * camsys standalone Electron app — main process.
  *
- * Adopts the daemon-WS pattern documented in cam's
- * `docs/architecture/launched-apps.md` via the shared
+ * Adopts the daemon-WS launched-app contract spec'd in
+ * `camsys/docs/launched-apps.md` via the shared
  * `startHost` from camsys's library face: HTTP serves the
  * renderer (vite proxy in dev, static in prod), per-app routes
  * (`/api/services`, `/api/services/kill`) hook in via

@@ -3,8 +3,8 @@
  *
  * Two targets — no preload. The renderer talks to the main process
  * over HTTP (main runs an HTTP server on a free port; renderer
- * `loadURL`s into it). Same daemon-WS pattern documented in
- * cam/docs/architecture/launched-apps.md.
+ * `loadURL`s into it). Conforms to the launched-app contract
+ * spec'd at camsys/docs/launched-apps.md.
  *   app/main     → out/main/index.js       (Electron main + HTTP daemon)
  *   app/renderer → out/renderer/           (React renderer, Vite-bundled)
  *

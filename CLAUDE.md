@@ -80,8 +80,10 @@ cleanup all live here.
 `src/host.ts` (added in 0.2.0) is the **canonical HTTP shell** for
 CAM-launched Electron apps. Every CAM-launched app's main process
 calls `startHost({...})` instead of hand-rolling its own server. See
-`docs/architecture/launched-apps.md` in cam for the full launched-app
-contract that `startHost` implements.
+[`docs/launched-apps.md`](docs/launched-apps.md) for the full
+launched-app contract that `startHost` implements (the spec lives
+here in camsys; cam's `docs/architecture/launched-apps.md` documents
+the host-side flow that uses the contract).
 
 `src/rebuild.ts` (added in 0.3.0) is the **only place
 `@electron/rebuild` is imported in the CAM ecosystem**. cam + audit +
@@ -159,7 +161,7 @@ Follow the precedent of `startHost` (0.2.0), `rebuild` (0.3.0),
 
 The three current extractions all met both criteria:
 - `startHost`: 5 apps, the `/cam-host/window-state` endpoint is a
-  *spec* in `docs/architecture/launched-apps.md`
+  *spec* in [`docs/launched-apps.md`](docs/launched-apps.md)
 - `rebuild`: 3 apps, mechanical ABI flipping with one obvious correct
   implementation
 - `BackToCam`: 4 apps, the `document.referrer.port === '5200'` rule
@@ -190,5 +192,6 @@ dynamic-import so it doesn't hit camsys's own startup path.
 - cam roadmap entries: "Camsys 0.2.0 — startHost extraction",
   "Native module rebuilds via camsys rebuild", "Post-arc cleanup
   sweep" (BackToCam extraction)
-- cam's `docs/architecture/launched-apps.md` — the launched-app
-  contract that `startHost` implements
+- [`docs/launched-apps.md`](docs/launched-apps.md) — the launched-app
+  contract that `startHost` implements; cam's
+  `docs/architecture/launched-apps.md` documents the host-side flow

@@ -7,7 +7,8 @@
   "categories": [
     { "id": "overview",     "title": "Overview",     "order": 0 },
     { "id": "architecture", "title": "Architecture", "order": 1 },
-    { "id": "contributing", "title": "Contributing", "order": 2 }
+    { "id": "contracts",    "title": "Contracts",    "order": 2 },
+    { "id": "contributing", "title": "Contributing", "order": 3 }
   ],
   "topics": [
     {
@@ -44,6 +45,13 @@
       "path": "docs/architecture/03-components.md",
       "category": "architecture",
       "lastReviewed": "2026-05-23"
+    },
+    {
+      "title": "Launched-app contract",
+      "description": "Protocol spec that every CAM-ecosystem launched app conforms to (docskit, term, audit, camsys's own services panel): HTTP daemon via startHost, /cam-host/window-state, updateEntryMeta, CAM_HOST_MODE, BackToCam chip, window-all-closed quit. The host-side implementation (cam's launchers) is documented in cam.",
+      "path": "docs/launched-apps.md",
+      "category": "contracts",
+      "lastReviewed": "2026-05-24"
     },
     {
       "title": "Development rules (CLAUDE.md)",
