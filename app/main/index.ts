@@ -129,8 +129,13 @@ app.whenReady().then(async () => {
   })
 })
 
+// Quit unconditionally on window-close — including macOS. The default
+// Electron-on-darwin behavior (keep alive in dock) is wrong for
+// camsys-launched apps: window closed = job done = quit, so the
+// camsys-run cleanup hook deletes the registry entry and iOS-dock
+// idempotency works on the next launch.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  app.quit()
 })
 
 // Re-export Entry shape so the type is reachable from the renderer
