@@ -1,5 +1,41 @@
 # Migration recipe — adopting camsys in a CAM-ecosystem repo
 
+## 1.0.0 — public surface sweep (2026-05-24)
+
+Removed exports that had no consumer anywhere in the CAM ecosystem
+(cam / audit / docskit / term / camsys-app). All still live as
+module-internal functions inside camsys's own `src/`; they're just
+not part of the published library contract anymore.
+
+**Removed from public exports:**
+
+| Symbol | Reason |
+|---|---|
+| `readEntry` | Internal helper. Used by `commands.ts` + `spawn.ts`, never by external consumers. |
+| `deleteEntry` | Internal helper. Used by `sweepStale` + `spawn.ts`'s cleanup. |
+| `isPidAlive` | Internal helper. Used by `sweepStale`. Consumers should call `sweepStale` + `listEntries` (sweep returns live-only). |
+| `registryDir` | Internal path resolver. Hardcoded layout (`~/.cam/run/`) — no consumer ever needed runtime access. |
+| `REGISTRY_DIR` | Already marked `@deprecated`. Pre-1.0 back-compat alias for `registryDir()`. |
+| `pickFreePort` / `pickFreePorts` | Aspirational utility — exported for "daemon-pattern apps that need a port" but every CAM app uses `startHost` which wraps these internally. No external consumer materialized. |
+| `minimizeService` | Sibling of `focusService`. Never called by any consumer. Removed entirely (function + export); the underlying `signalWindowState` helper stays. |
+
+**Kept (live exports):**
+
+`Entry`, `listEntries`, `sweepStale`, `killService`, `updateEntryMeta`,
+`focusService` (from registry), `run` + `RunOptions` (spawn), and the
+host quartet `startHost` + `readJsonBody` + `jsonResponse` + types
+(`HostConfig` / `HostHandle` / `HostWindow` / `RequestHandler`).
+
+**Migration:** no consumer code changes needed — none of the removed
+symbols had external callers. Bump camsys's pin (lockfile) in each
+consumer and rebuild. If you were using one of the removed symbols
+in an unfinished feature branch, file an issue with the use case
+and we'll re-export.
+
+---
+
+
+
 Each per-repo adoption is small and mechanical. Three file edits plus
 one optional smoke-harness edit if the repo has one. Copy-paste against
 the local repo state; verify with the build + test + smoke check at the

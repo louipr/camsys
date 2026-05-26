@@ -25,10 +25,6 @@ export function registryDir(): string {
   return join(homedir(), '.cam', 'run')
 }
 
-/** @deprecated Use registryDir() — exported for back-compat with library
- *  consumers that import a constant. Reads HOME at module-load time. */
-export const REGISTRY_DIR = registryDir()
-
 export interface Entry {
   /** Display name — used as the registry key (file basename). */
   name: string
@@ -195,15 +191,6 @@ export function updateEntryMeta(
  */
 export function focusService(name: string): boolean {
   return signalWindowState(name, 'focus')
-}
-
-/**
- * Hide a registered service's OS window. Same dispatch shape as
- * `focusService`: prefers the daemon endpoint, falls back to
- * AppleScript on macOS.
- */
-export function minimizeService(name: string): boolean {
-  return signalWindowState(name, 'minimize')
 }
 
 function signalWindowState(name: string, action: 'focus' | 'minimize'): boolean {

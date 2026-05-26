@@ -4,21 +4,22 @@
  * Most consumers use the CLI (`camsys run ...`). The library exports
  * are for callers that want to read the registry programmatically
  * — e.g., cam's Services panel.
+ *
+ * Surface kept minimal post-1.0 sweep: every export below has a live
+ * consumer somewhere in the CAM ecosystem (cam/audit/docskit/term).
+ * Aspirational / never-consumed exports (`readEntry`, `deleteEntry`,
+ * `isPidAlive`, `registryDir`, `REGISTRY_DIR`, `pickFreePort{,s}`,
+ * `minimizeService`) were removed in v1.0 — they remain internal to
+ * camsys's own modules but aren't part of the published contract.
  */
 
 export {
   type Entry,
-  REGISTRY_DIR,
-  registryDir,
   listEntries,
-  readEntry,
-  deleteEntry,
-  isPidAlive,
   sweepStale,
   killService,
   updateEntryMeta,
   focusService,
-  minimizeService,
 } from './registry.js'
 
 /**
@@ -35,15 +36,6 @@ export {
  * `void run({detach: true, ...})`.
  */
 export { run, type RunOptions } from './spawn.js'
-
-/**
- * Kernel-picked free port via `bind(0)`. Same primitive `camsys run`
- * uses for CAM_VITE_PORT / CAM_CDP_PORT — exported for daemon-pattern
- * apps that need a port for their HTTP server. Tiny race window
- * between release + caller bind; in practice the ephemeral range
- * makes collisions negligible.
- */
-export { pickFreePort, pickFreePorts } from './ports.js'
 
 /**
  * Reusable HTTP shell for CAM-launched apps. Every cam-launched
