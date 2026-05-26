@@ -53,9 +53,9 @@ the library; children writing their own registry entries).
 | # | Container | Tech | Responsibility | Consumers |
 |---|---|---|---|---|
 | 1 | **CLI binary** | Node ESM, shebang-executable at `dist/src/cli.js` (declared as `bin: { camsys: ... }` in package.json) | Argv parsing + subcommand dispatch. Wraps the library's `run()`, `listEntries()`, `killService()`, `rebuild()` etc. in terminal-friendly verbs. | Developer at the shell; every CAM app's npm scripts. |
-| 2 | **Library module** | Node-only TypeScript, published as the package's main subpath (`import { … } from 'camsys'`). Zero Electron deps at runtime. | The programmatic surface — `run`, `listEntries`, `readEntry`, `updateEntryMeta`, `killService`, `focusService`, `pickFreePort`, `startHost`, `readJsonBody`, `jsonResponse`, types. | CAM apps' main processes (cam, audit, docskit, term, cam-plugins). |
+| 2 | **Library module** | Node-only TypeScript, published as the package's main subpath (`import { … } from 'camsys'`). Zero Electron deps at runtime. | The programmatic surface (post-1.0 sweep) — `run`, `listEntries`, `sweepStale`, `updateEntryMeta`, `killService`, `focusService`, `startHost`, `readJsonBody`, `jsonResponse`, types. | CAM apps' main processes (cam, audit, docskit, term, cam-plugins). |
 | 3 | **UI subpath** | React TSX, published as `camsys/ui`. React + react-dom declared as OPTIONAL peer deps. | The React component surface — `ServicesPanel` (the "what's running" widget), `BackToCam` (the cam-mobile referrer chip), `CAM_DAEMON_PORT` / `CAM_DAEMON_URL` constants. | CAM apps' renderers; this repo's own standalone app. |
-| 4 | **Standalone Electron app** | electron-vite-built bundle. Uses `src/host.ts` (HTTP shell) + `ui/` (renderer components). | The "running services" window. Just a thin shell over the registry — a header + `<ServicesPanel>` + `<BackToCam>`. | Developer (`npm run app`); cam (via `cam.docs.open`-style camsysRun launch). |
+| 4 | **Standalone Electron app** | electron-vite-built bundle. Uses `src/host.ts` (HTTP shell) + `ui/` (renderer components). | The "running services" window. Just a thin shell over the registry — a header + `<ServicesPanel>` + `<BackToCam>`. | Developer (`npm run app`); cam (via `cam.launch.*`-style camsysRun launch). |
 
 ## Relationships
 

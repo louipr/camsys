@@ -53,7 +53,7 @@ camsys/
 | Face | Public surface | Consumers |
 |---|---|---|
 | **CLI** | `camsys run / list / port / kill / cleanup / rebuild` | every CAM app's package.json scripts |
-| **Library** (`camsys`) | `run`, `listEntries`, `readEntry`, `updateEntryMeta`, `focusService`, `killService`, `pickFreePort`, `pickFreePorts`, `startHost`, `rebuild`, `Entry`, `RunOptions`, `HostConfig`, `HostHandle`, `HostWindow`, `RequestHandler`, `readJsonBody`, `jsonResponse` | cam (main), audit (main), docskit (main), term (main) |
+| **Library** (`camsys`) | `run`, `listEntries`, `sweepStale`, `updateEntryMeta`, `focusService`, `killService`, `startHost`, `rebuild`, `Entry`, `RunOptions`, `HostConfig`, `HostHandle`, `HostWindow`, `RequestHandler`, `readJsonBody`, `jsonResponse` | cam (main), audit (main), docskit (main), term (main) |
 | **UI** (`camsys/ui`) | `ServicesPanel`, `BackToCam`, `CAM_DAEMON_PORT`, `CAM_DAEMON_URL` | cam (renderer), audit (renderer), docskit (renderer), term (renderer), camsys's own app |
 | **Standalone Electron app** | the "running services" window | launched via `cam.scripts.runDetached` or `camsys run camsys:app -- electron .` |
 

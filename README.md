@@ -141,8 +141,9 @@ Two opt-in subpaths beyond the CLI:
 Read the registry programmatically:
 
 ```ts
-import { listEntries, readEntry, sweepStale } from 'camsys'
+import { listEntries, sweepStale } from 'camsys'
 
+sweepStale()              // optional: drop dead-PID entries first
 const running = listEntries()
 // → [{ name: 'docskit', pid: 84321, vitePort: 51234, ... }, ...]
 ```

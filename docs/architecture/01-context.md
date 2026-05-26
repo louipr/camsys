@@ -46,7 +46,7 @@ spawns them; they then write into the filesystem on their own).
 | Element | Role |
 |---|---|
 | **Developer** | Operator who runs CLI verbs (`camsys run / list / kill / rebuild`). Reads `camsys list` output to understand running services. |
-| **CAM apps** | cam, audit, docskit, term, cam-plugins. Import camsys's library face (`run`, `startHost`, `listEntries`, `pickFreePort`, `rebuild`) from their main processes; import the UI face (`ServicesPanel`, `BackToCam`) from their renderers. |
+| **CAM apps** | cam, audit, docskit, term, cam-plugins. Import camsys's library face (`run`, `startHost`, `listEntries`, `updateEntryMeta`, `rebuild`) from their main processes; import the UI face (`ServicesPanel`, `BackToCam`) from their renderers. |
 | **camsys** *(system in scope)* | The four faces (CLI + library + UI + standalone app) backed by one shared on-disk registry. |
 | **OS process model** | macOS / Linux process primitives camsys depends on: `child_process.spawn`, `detached: true` + `setsid` for process group creation, `kill(-pgid, SIGTERM)` for whole-subtree teardown. |
 | **Kernel** | Source of ephemeral free ports via `bind(0)`. camsys allocates and releases; consumers bind. |
